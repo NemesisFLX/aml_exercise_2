@@ -8,14 +8,18 @@ g_env = gym.make('CartPole-v0')
 g_env.render()
 
 import tensorflow as tf
+from math import floor
 import random
 import numpy as np
 
 num_training_episodes = 1000
 episode_length = 200
+e = 0.1
+alpha = 0.1
+discount = 0.1
 
 # Init Q Matrix 
-Qt = np.full((10,10,10,10,3), 0)
+Qt = np.full((10,10,10,10,2), 0, dtype=np.float64)
 
 def run_episode( env, sess ):
     
@@ -32,9 +36,25 @@ def run_episode( env, sess ):
         #observation, reward, done, info = env.step(action)
         
         # Q policy
-        action
+        cart_position_t0 = floor((observation[0] + 2.4)/0.48)
+        cart_velocity_t0 = floor((observation[1] + 5)/1)
+        pole_angle_t0 = floor((observation[2] + 0.20943951)/0.041887902)
+        pole_velocity_t0 = floor((observation[3] + 5)/1)
+        
+        possibleActions = Qt[cart_position_t0][cart_velocity_t0][pole_angle_t0][pole_velocity_t0].tolist()
+        if random.uniform(0,1) < e:
+            action = 0 if random.uniform(0,1) < 0.5 else 1
+        else:
+            action = possibleActions.index(max(possibleActions))
+            
         observation, reward, done, info = env.step(action)
         
+        cart_position_t1 = floor((observation[0] + 2.4)/0.48)
+        cart_velocity_t1 = floor((observation[1] + 5)/1)
+        pole_angle_t1 = floor((observation[2] + 0.20943951)/0.041887902)
+        pole_velocity_t1 = floor((observation[3] + 5)/1)
+
+        Qt[cart_position_t0][cart_velocity_t0][pole_angle_t0][pole_velocity_t0][action] = (1 - alpha) * possibleActions[action] + alpha * (reward + discount * Qt[cart_position_t1][cart_velocity_t1][pole_angle_t1][pole_velocity_t1].max() - Qt[cart_position_t0][cart_velocity_t0][pole_angle_t0][pole_velocity_t0][action]) 
         episode_return += reward
 
         # disable rendering for faster training
@@ -48,7 +68,7 @@ def run_episode( env, sess ):
 
     return episode_return
 
-def calc
+
 
 env = gym.make('CartPole-v0')
 env.render()
